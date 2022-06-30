@@ -1,0 +1,8 @@
+name: BeAStreamer
+version: '${project.version}'
+main: beastreamer.beastreamer.BeAStreamer
+authors: [ R1DD1 ]
+description: Simulator of streamers
+depend:
+  - ProtocolLib
+
