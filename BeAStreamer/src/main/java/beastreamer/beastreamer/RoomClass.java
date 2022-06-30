@@ -105,7 +105,6 @@ public class RoomClass implements Listener {
 
 
 
-
         if (plugin.getConfig().contains("streamers.users."+uuid)){
             p.sendMessage("опять");
         }else {
@@ -390,6 +389,7 @@ public class RoomClass implements Listener {
         }
 
     }
+
 
 //    @EventHandler
 //    public void setNight(PlayerInteractEvent e){

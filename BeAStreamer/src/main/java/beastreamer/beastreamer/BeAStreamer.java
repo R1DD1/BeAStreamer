@@ -44,6 +44,7 @@ public final class BeAStreamer extends JavaPlugin {
 
 //        getServer().getPluginManager().registerEvents(new PlayerConnectClass(), this);
         getServer().getPluginManager().registerEvents(new RoomClass(this),this);
+        getServer().getPluginManager().registerEvents(new JobClass(this),this);
     }
 
     @Override
