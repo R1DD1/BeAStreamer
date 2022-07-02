@@ -16,7 +16,7 @@ public class ArenaGame implements Listener {
 
 
     //    ПОЛУЧЕНИЕ ВОРЛДОВ (для нг)
-    World arenaWorld = Bukkit.getWorld("connectWorld");
+    World arenaWorld = Bukkit.getWorld("arenaWorld");
 
 
     @EventHandler

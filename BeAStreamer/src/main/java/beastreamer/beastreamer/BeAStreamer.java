@@ -30,6 +30,16 @@ public final class BeAStreamer extends JavaPlugin {
         connectWorld.generatorSettings("2;0;1;");
         connectWorld.createWorld();
 
+        WorldCreator arenaWorld = new WorldCreator("arenaWorld");
+        arenaWorld.type(WorldType.FLAT);
+        arenaWorld.generatorSettings("2;0;1;");
+        arenaWorld.createWorld();
+
+        WorldCreator jobWorld = new WorldCreator("jobWorld");
+        jobWorld.type(WorldType.FLAT);
+        jobWorld.generatorSettings("2;0;1;");
+        jobWorld.createWorld();
+
 //        ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
 //        protocolManager.addPacketListener();
 
