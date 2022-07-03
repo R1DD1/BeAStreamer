@@ -1,6 +1,7 @@
 package beastreamer.beastreamer;
 
 
+import beastreamer.beastreamer.database.Database;
 import com.connorlinfoot.actionbarapi.ActionBarAPI;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -31,6 +32,8 @@ public class RoomClass implements Listener {
     public RoomClass(JavaPlugin plugin) {
         this.plugin = plugin;
     }
+
+    private final Database database =new Database();
 
     World roomWorld = Bukkit.getWorld("connectWorld");
     World arenaWorld = Bukkit.getWorld("arenaWorld");
@@ -65,16 +68,14 @@ public class RoomClass implements Listener {
         Scoreboard sb = manager.getNewScoreboard();
         Objective obj = sb.registerNewObjective("Статистика", "dummy");
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-        String uuid = p.getUniqueId().toString();
         Score money = obj.getScore(ChatColor.BOLD + "Баланс:");
-        money.setScore((Integer) plugin.getConfig().get("streamers.users." + uuid + ".money"));
+        money.setScore((int) database.getIntArgs(p.getUniqueId(), "MONEY"));
 
         Score followers = obj.getScore(ChatColor.BOLD + "Фоловеров:");
-        followers.setScore((Integer) plugin.getConfig().get("streamers.users." + uuid + ".followers"));
+        followers.setScore((int) database.getIntArgs(p.getUniqueId(), "FOLLOWERS"));
 
         Score maxEnergy = obj.getScore(ChatColor.BOLD + "Энергия:");
-        maxEnergy.setScore((Integer) plugin.getConfig().get("streamers.users." + uuid + ".energy.cur"));
-
+        maxEnergy.setScore((int) database.getIntArgs(p.getUniqueId(), "CUR_ENERGY"));
         p.setScoreboard(sb);
     }
 
@@ -90,27 +91,14 @@ public class RoomClass implements Listener {
     @EventHandler
     public void playerJoinEvent(PlayerJoinEvent e) {
         Player p = e.getPlayer();
+        p.sendMessage(String.valueOf(database.getIntArgs(p.getUniqueId(), "BOOST_FOLL")));
         p.teleport(roomWorld.getSpawnLocation());
-        String uuid = p.getUniqueId().toString();
         TextComponent textComponent = new TextComponent("Hello");
         textComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/accept"));
         p.spigot().sendMessage(textComponent);
 
 
-        if (plugin.getConfig().contains("streamers.users." + uuid)) {
-            p.sendMessage("опять");
-        } else {
-            plugin.getConfig().set("streamers.users." + uuid, "");
-            plugin.getConfig().set("streamers.users." + uuid + ".boosters.money", 1);
-            plugin.getConfig().set("streamers.users." + uuid + ".boosters.follower", 1);
-            plugin.getConfig().set("streamers.users." + uuid + ".followers", 0);
-            plugin.getConfig().set("streamers.users." + uuid + ".money", 500);
-            plugin.getConfig().set("streamers.users." + uuid + ".energy", "");
-            plugin.getConfig().set("streamers.users." + uuid + ".energy.max", 50);
-            plugin.getConfig().set("streamers.users." + uuid + ".energy.cur", 50);
-            plugin.saveConfig();
-            p.sendTitle(ChatColor.GREEN + "Приветствую ", "", 10, 40, 10);
-        }
+
 //        Vehicle allVeh = e.getPlayer().getLocation().getChunk().getEntities();
         statisticBoard(p);
 
@@ -160,7 +148,7 @@ public class RoomClass implements Listener {
         ItemStack arena = createItem(Material.GOLDEN_APPLE, "ПВЕ", ChatColor.BOLD);
         Player p = (Player) e.getWhoClicked();
         if (e.getCurrentItem().equals(createItem(Material.EMERALD, "Начать стрим", ChatColor.GREEN))) {
-            if (plugin.getConfig().getInt("streamers.users." + p.getUniqueId() + ".energy.cur") >= 20) {
+            if (database.getIntArgs(p.getUniqueId(), "CUR_ENERGY") >= 20) {
                 Inventory liveStream = Bukkit.createInventory(null, 36, "Прямой эфир");
                 addItemIntoInv(liveStream, randomInt(36), createItem(Material.WEB, "Подключение", ChatColor.WHITE));
                 p.openInventory(liveStream);
@@ -180,13 +168,15 @@ public class RoomClass implements Listener {
                 p.sendMessage("Вы выполнили!!!!!!");
 
 
-                float curFollowers = plugin.getConfig().getInt("streamers.users." + p.getUniqueId() + ".followers");
+                double curFollowers = database.getIntArgs(p.getUniqueId(), "FOLLOWERS");
 
                 if (curFollowers < 1000) {
                     int followersRand = randomInt(10);
-                    int foll = (int) (curFollowers + followersRand);
-                    ActionBarAPI.sendActionBar(p, "Поздравляю, у вас " + ChatColor.GREEN + followersRand + " новых фолловеров" + ChatColor.AQUA + " [" + plugin.getConfig().get("streamers.users." + p.getUniqueId() + ".boosters.follower") + "x]", 100);
-                    plugin.getConfig().set("streamers.users." + p.getUniqueId() + ".followers", foll);
+                    double follWithBoost = followersRand * database.getIntArgs(p.getUniqueId(), "BOOST_FOLL");
+                    p.sendMessage(String.valueOf(follWithBoost));
+                    double foll =  curFollowers + follWithBoost;
+                    ActionBarAPI.sendActionBar(p, "Поздравляю, у вас " + ChatColor.GREEN +(int) follWithBoost + " новых фолловеров" + ChatColor.AQUA + " [" + database.getIntArgs(p.getUniqueId(), "BOOST_FOLL") + "x]", 100);
+                    database.updateArgs(p.getUniqueId(), "FOLLOWERS", foll);
                     statisticBoard(p);
                 }
 //                else if(curFollowers<500){
@@ -219,8 +209,8 @@ public class RoomClass implements Listener {
 
 
 
-                int newEnergy = plugin.getConfig().getInt("streamers.users." + p.getUniqueId() + ".energy.cur") - 20;
-                plugin.getConfig().set("streamers.users." + p.getUniqueId() + ".energy.cur", newEnergy);
+                double newEnergy = database.getIntArgs(p.getUniqueId(), "CUR_ENERGY") - 20;
+                database.updateArgs(p.getUniqueId(), "CUR_ENERGY", newEnergy);
                 statisticBoard(p);
             } else {
                 curWeb = curWeb + 1;
@@ -271,12 +261,12 @@ public class RoomClass implements Listener {
             if (warehouse.contains(videoCard)) {
                 p.sendMessage(ChatColor.RED + "У вас уже куплен этот товар");
             } else {
-                if (plugin.getConfig().getInt("streamers.users." + p.getUniqueId() + ".money") >= plugin.getConfig().getInt("market.slots.videocard.price")) {
+                if (database.getIntArgs(p.getUniqueId(), "MONEY") >= plugin.getConfig().getInt("market.slots.videocard.price")) {
                     ItemStack sold = createItem(Material.BARRIER, "КУПЛЕНО", ChatColor.RED);
                     int slot = e.getSlot();
                     e.getClickedInventory().setItem(slot, sold);
-                    int newMoney = plugin.getConfig().getInt("streamers.users." + p.getUniqueId() + ".money") - plugin.getConfig().getInt("market.slots.videocard.price");
-                    plugin.getConfig().set("streamers.users." + p.getUniqueId() + ".money", newMoney);
+                    double newMoney = database.getIntArgs(p.getUniqueId(), "MONEY") - plugin.getConfig().getInt("market.slots.videocard.price");
+                    database.updateArgs(p.getUniqueId(), "MONEY", newMoney);
                     warehouse.addItem(videoCard);
                     statisticBoard(p);
                 } else {
@@ -296,7 +286,7 @@ public class RoomClass implements Listener {
 
         Player p = (Player) e.getWhoClicked();
         if (e.getCurrentItem().getType().equals(Material.PAPER)) {
-            int curFollowers = plugin.getConfig().getInt("streamers.users." + p.getUniqueId() + ".followers");
+            double curFollowers = database.getIntArgs(p.getUniqueId(), "FOLLOWERS");
             if (curFollowers > 100) {
                 if (notSended) {
                     postInv.addItem(eMail);
@@ -314,7 +304,7 @@ public class RoomClass implements Listener {
             p.sendMessage("Мы предлогаем вам воспользоваться нашей партнерской программой");
             p.sendMessage("");
             p.sendMessage("Чтобы принять предложение напишите " + ChatColor.GREEN + "ПРИНЯТЬ");
-            p.sendMessage("Чтобы отклонить предложение напишите " + ChatColor.RED + "ПРИНЯТЬ");
+            p.sendMessage("Чтобы отклонить предложение напишите " + ChatColor.RED + "ОТКАЗАТЬСЯ");
             p.sendMessage("");
         }
     }
@@ -323,7 +313,7 @@ public class RoomClass implements Listener {
     public void acceptChat(AsyncPlayerChatEvent e) {
         Player p = e.getPlayer();
         String msg = e.getMessage();
-        float boostFoll = plugin.getConfig().getInt("streamers.users." + p.getUniqueId() + ".boosters.follower");
+        double boostFoll = database.getIntArgs(p.getUniqueId(), "BOOST_FOLL");
         if (msg.equalsIgnoreCase("принять")) {
             p.sendMessage("");
             p.sendMessage("");
@@ -331,10 +321,10 @@ public class RoomClass implements Listener {
             p.sendMessage("");
             p.sendMessage("Для вас активирован бустер фолловеров " + ChatColor.AQUA + "[x1.1]");
 
-            float newBoostFoll = (float) (boostFoll + 0.1);
-            plugin.getConfig().set("streamers.users." + p.getUniqueId() + ".boosters.follower", newBoostFoll);
+            double newBoostFoll = boostFoll + 0.1;
+            database.updateArgs(p.getUniqueId(), "BOOST_FOLL", newBoostFoll);
 
-            p.sendMessage("Нынешний бустер: " + plugin.getConfig().get("streamers.users." + p.getUniqueId() + ".boosters.follower"));
+            p.sendMessage("Нынешний бустер: " + database.getIntArgs(p.getUniqueId(), "BOOST_FOLL"));
             p.sendMessage("");
             p.sendMessage("");
 
@@ -389,7 +379,7 @@ public class RoomClass implements Listener {
     @EventHandler
     public void playerSleep(PlayerBedEnterEvent e){
         Player p = e.getPlayer();
-        plugin.getConfig().set("streamers.users."+p.getUniqueId()+".energy.cur", plugin.getConfig().getInt("streamers.users."+p.getUniqueId()+".energy.max"));
+        database.updateArgs(p.getUniqueId(), "CUR_ENERGY", database.getIntArgs(p.getUniqueId(), "MAX_ENERGY"));
         statisticBoard(p);
 
 
