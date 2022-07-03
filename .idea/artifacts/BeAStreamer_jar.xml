@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="BeAStreamer:jar">
+    <output-path>$PROJECT_DIR$/../../../../bukkit/localhost/plugins</output-path>
+    <root id="archive" name="BeAStreamer.jar">
+      <element id="module-output" name="BeAStreamer" />
+    </root>
+  </artifact>
+</component>
