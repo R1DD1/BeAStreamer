@@ -22,7 +22,7 @@ import org.bukkit.scoreboard.*;
 //import net.md_5.bungee.api.chat.TextComponent;
 
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class RoomClass implements Listener {
 
@@ -173,9 +173,8 @@ public class RoomClass implements Listener {
                 if (curFollowers < 1000) {
                     int followersRand = randomInt(10);
                     double follWithBoost = followersRand * database.getIntArgs(p.getUniqueId(), "BOOST_FOLL");
-                    p.sendMessage(String.valueOf(follWithBoost));
                     double foll =  curFollowers + follWithBoost;
-                    ActionBarAPI.sendActionBar(p, "Поздравляю, у вас " + ChatColor.GREEN +(int) follWithBoost + " новых фолловеров" + ChatColor.AQUA + " [" + database.getIntArgs(p.getUniqueId(), "BOOST_FOLL") + "x]", 100);
+                    ActionBarAPI.sendActionBar(p, "Поздравляю, у вас " + ChatColor.GREEN +(int) follWithBoost + " новых фолловеров" + ChatColor.AQUA + " [" + (float) database.getIntArgs(p.getUniqueId(), "BOOST_FOLL") + "x]", 100);
                     database.updateArgs(p.getUniqueId(), "FOLLOWERS", foll);
                     statisticBoard(p);
                 }
@@ -242,39 +241,52 @@ public class RoomClass implements Listener {
     /////// NET MARKET ///////////////////////////////////////////////////////////
     @EventHandler
     public void netMarket(InventoryClickEvent e) {
-        ItemStack videoCard = createItem(Material.DAYLIGHT_DETECTOR, plugin.getConfig().getString("market.slots.videocard.name"), ChatColor.WHITE);
+        // КОМПЛЕКТУЮЩИЕ
+        Inventory accessoriesInv = Bukkit.createInventory(null, 36, "Комплектующие");
+        ItemStack accessories = createItem(Material.DAYLIGHT_DETECTOR, plugin.getConfig().getString("market.slots.videocard.name"), ChatColor.WHITE);
+        ItemMeta metaAccessories = accessories.getItemMeta();
+        metaAccessories.setDisplayName(plugin.getConfig().getString("market.accessories.displayName"));
+        List<?> lore = plugin.getConfig().getList("market.accessories.lore");
+        metaAccessories.setLore((List<String>) lore);
+        accessories.setItemMeta(metaAccessories);
+
+
+        //
+
+
 
         Player p = (Player) e.getWhoClicked();
         if (e.getCurrentItem().getType().equals(Material.BEACON)) {
             Inventory webMarketInv = Bukkit.createInventory(null, 36, "Интернет магазин");
-            ItemMeta meta = videoCard.getItemMeta();
-            ArrayList<String> lore = new ArrayList<>();
-            lore.add(String.valueOf(plugin.getConfig().getString("market.slots.videocard.price")));
-            meta.setLore(lore);
-            videoCard.setItemMeta(meta);
-            webMarketInv.setItem(0, videoCard);
+            webMarketInv.setItem(0, accessories);
+
             p.openInventory(webMarketInv);
+        }
+        if (e.getCurrentItem().equals(accessories)){
+
+            p.openInventory(accessoriesInv);
+
         }
 
         //////// VIDEOCARD ////////////////////////////////////////////////////////
-        if (e.getCurrentItem().getType().equals(Material.DAYLIGHT_DETECTOR)) {
-            if (warehouse.contains(videoCard)) {
-                p.sendMessage(ChatColor.RED + "У вас уже куплен этот товар");
-            } else {
-                if (database.getIntArgs(p.getUniqueId(), "MONEY") >= plugin.getConfig().getInt("market.slots.videocard.price")) {
-                    ItemStack sold = createItem(Material.BARRIER, "КУПЛЕНО", ChatColor.RED);
-                    int slot = e.getSlot();
-                    e.getClickedInventory().setItem(slot, sold);
-                    double newMoney = database.getIntArgs(p.getUniqueId(), "MONEY") - plugin.getConfig().getInt("market.slots.videocard.price");
-                    database.updateArgs(p.getUniqueId(), "MONEY", newMoney);
-                    warehouse.addItem(videoCard);
-                    statisticBoard(p);
-                } else {
-                    p.sendMessage("Пора на работу");
-                }
-            }
-
-        }
+//        if (e.getCurrentItem().getType().equals(Material.DAYLIGHT_DETECTOR)) {
+//            if (warehouse.contains(videoCard)) {
+//                p.sendMessage(ChatColor.RED + "У вас уже куплен этот товар");
+//            } else {
+//                if (database.getIntArgs(p.getUniqueId(), "MONEY") >= plugin.getConfig().getInt("market.slots.videocard.price")) {
+//                    ItemStack sold = createItem(Material.BARRIER, "КУПЛЕНО", ChatColor.RED);
+//                    int slot = e.getSlot();
+//                    e.getClickedInventory().setItem(slot, sold);
+//                    double newMoney = database.getIntArgs(p.getUniqueId(), "MONEY") - plugin.getConfig().getInt("market.slots.videocard.price");
+//                    database.updateArgs(p.getUniqueId(), "MONEY", newMoney);
+//                    warehouse.addItem(videoCard);
+//                    statisticBoard(p);
+//                } else {
+//                    p.sendMessage("Пора на работу");
+//                }
+//            }
+//
+//        }
     }
 
     Boolean notSended = true;
@@ -315,6 +327,7 @@ public class RoomClass implements Listener {
         String msg = e.getMessage();
         double boostFoll = database.getIntArgs(p.getUniqueId(), "BOOST_FOLL");
         if (msg.equalsIgnoreCase("принять")) {
+//            postInv.remove(Material.COOKIE);
             p.sendMessage("");
             p.sendMessage("");
             p.sendMessage("Вы приняли предложение");
@@ -324,7 +337,7 @@ public class RoomClass implements Listener {
             double newBoostFoll = boostFoll + 0.1;
             database.updateArgs(p.getUniqueId(), "BOOST_FOLL", newBoostFoll);
 
-            p.sendMessage("Нынешний бустер: " + database.getIntArgs(p.getUniqueId(), "BOOST_FOLL"));
+            p.sendMessage("Нынешний бустер: " +(float) database.getIntArgs(p.getUniqueId(), "BOOST_FOLL"));
             p.sendMessage("");
             p.sendMessage("");
 
